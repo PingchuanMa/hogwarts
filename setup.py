@@ -13,7 +13,7 @@ setup(
     entry_points={
         'console_scripts': [
             'hog-manage = hogwarts.command:manage',
-            'hog-mng = hogwarts.command:manage'
+            'hog-mng = hogwarts.command:manage',
             'hog-run = hogwarts.command:run',
             'hog-ls = hogwarts.command:ls',
             'hog-list = hogwarts.command:ls',
