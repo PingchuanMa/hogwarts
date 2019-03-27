@@ -149,7 +149,7 @@ def cd_and_execute(trg_dir, command, wizard):
 # ===============================================
 
 
-def manage():
+def control():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--build', '-b', action="store_true",
@@ -256,16 +256,8 @@ def run():
 
 
 def ls():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('name')
-    opt = parser.parse_args()
-    name = opt.name.casefold()
-    if name in ['hogwarts', 'all']:
-        log('hogwarts: {}'.format(find_hogwarts(True).parent))
-    if name in ['house', 'all']:
-        log('house:    {}'.format(find_house('', True).parent))
-    if name == 'wizard':
-        log('wizard: {}'.format(find_wizard('', True).parent))
+    log('hogwarts: {}'.format(find_hogwarts(True).parent))
+    log('house:    {}'.format(find_house('', True).parent))
 
 
 # ===============================================
