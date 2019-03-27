@@ -1,0 +1,277 @@
+__all__ = []
+
+import os
+import sys
+import time
+import yaml
+import shlex
+import shutil
+import argparse
+import subprocess
+from pathlib import Path
+from hogwarts import log
+
+
+# ===============================================
+# Helper functions
+# ===============================================
+
+
+def yaml_dump(obj, path):
+    with Path(path).open('w') as f:
+        yaml.dump(obj, f, default_flow_style=False, indent=4, width=9999)
+
+
+def yaml_load(path):
+    with Path(path).open('r') as f:
+        d = yaml.load(f)
+    return d
+
+
+def get_full_command(argv):
+    new_argv = []
+    for index, arg in enumerate(argv):
+        if index == 0:
+            new_argv.append(Path(argv[0]).name)
+        elif ' ' in arg:
+            new_argv.append('"{}"'.format(arg))
+        else:
+            new_argv.append(arg)
+    return ' '.join(new_argv)
+
+
+def fail(*args):
+    log('Fail:\n\t{}'.format('\n\t'.join(args)))
+    sys.exit()
+
+
+def success(*args):
+    log('Success:\n\t{}'.format('\n\t'.join(args)))
+
+
+def trace_up(target_file):
+    path = Path.cwd()
+    while not path.joinpath(target_file).is_file():
+        if path == Path('/'):
+            return None
+        path = path.parent
+    return path / target_file
+
+
+def find_hogwarts(should_exist):
+    hogwarts_file = trace_up('.hogwarts')
+    do_exist = hogwarts_file is not None
+    if do_exist != should_exist:
+        if do_exist:
+            fail('hogwarts is already built at {}.'.format(hogwarts_file))
+        else:
+            fail('hogwarts is not found.')
+    return hogwarts_file
+
+
+def find_house(house, should_exist):
+    hogwarts_file = find_hogwarts(True)
+    hogwarts_info = yaml_load(hogwarts_file)
+    if house == '':
+        house = hogwarts_info['curr_house']
+    do_exist = house in hogwarts_info['avail_houses']
+    if do_exist:
+        house_dir = hogwarts_file.parent / hogwarts_info['avail_houses'][house]
+        house_file = house_dir / '.house'
+        do_exist = house_dir.is_dir() and house_file.is_file()
+    if do_exist != should_exist:
+        if do_exist:
+            fail('house {} is already built at {}.'.format(house, house_file))
+        else:
+            fail('house {} is not found.'.format(house))
+    return house_file if do_exist else None
+
+
+def find_wizard(wizard, should_exist):
+    if wizard == '':
+        wizard_file = trace_up('.wizard')
+        do_exist = wizard_file is not None
+    else:
+        house_file = find_house('', True)
+        wizard_dir = house_file.parent / wizard
+        wizard_file = wizard_dir / '.wizard'
+        do_exist = wizard_dir.is_dir() and wizard_file.is_file()
+    if do_exist != should_exist:
+        if do_exist:
+            fail('wizard already exists at {}.'.format(wizard_file))
+        else:
+            fail('wizard is not found.')
+    return wizard_file if do_exist else None
+
+
+def build_hogwarts():
+    find_hogwarts(False)
+    hogwarts_file = Path.cwd() / '.hogwarts'
+    hogwarts_info = {
+        'curr_house': '',
+        'avail_houses': {}}
+    yaml_dump(hogwarts_info, hogwarts_file)
+    success('built hogwarts at {}'.format(hogwarts_file))
+
+
+def build_house():
+    hogwarts_file = find_hogwarts(True)
+    hogwarts_info = yaml_load(hogwarts_file)
+    find_house(Path.cwd().name, False)
+    house_file = Path.cwd() / '.house'
+    yaml_dump({}, house_file)
+    previous_house = hogwarts_file['curr_house']
+    hogwarts_file['curr_house'] = Path.cwd().name
+    hogwarts_info['avail_houses'][hogwarts_file['curr_house']] = \
+        str(house_file.parent.relative_to(hogwarts_file.parent))
+    yaml_dump(hogwarts_info, hogwarts_file)
+    success('built house at {}'.format(house_file),
+            'switched house from {} to {}'.format(previous_house,
+                                                  hogwarts_file['curr_house']))
+
+
+def cd_and_execute(trg_dir, command, wizard):
+    os.chdir(str(trg_dir))
+    env = os.environ.copy()
+    env['wizard'] = wizard
+    process = subprocess.Popen(command, shell=True, env=env)
+    while True:
+        try:
+            process.wait()
+            break
+        except KeyboardInterrupt:
+            print('''\tPlease double press Ctrl-C within 1 second to kill job.'''
+                  '''It will take several seconds to shutdown ...''', flush=True)
+
+
+# ===============================================
+# Shell script interfaces
+# ===============================================
+
+
+def manage():
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--build', '-b', action="store_true",
+                       help='build hogwarts/house')
+    group.add_argument('--switch', '-s', action="store_true",
+                       help='switch current house')
+    group.add_argument('--delete', '-d', action='store_true',
+                       help='delete a house')
+    parser.add_argument('name', required=True)
+    opt = parser.parse_args()
+    if opt.build:
+        if opt.name.casefold() == 'hogwarts':
+            build_hogwarts()
+        elif opt.name.casefold() == 'house':
+            build_house()
+        else:
+            fail('unexpect building: {} (hogwarts/house expected)'.format(opt.name))
+    elif opt.switch:
+        hogwarts_file = find_hogwarts(True)
+        hogwarts_info = yaml_load(hogwarts_file)
+        if opt.name in hogwarts_info['avail_houses']:
+            previous_house = hogwarts_info['curr_house']
+            hogwarts_info['curr_house'] = opt.name
+            yaml_dump(hogwarts_info, hogwarts_file)
+            success('switched house from {} to {}'.format(previous_house,
+                                                          hogwarts_file['curr_house']))
+        else:
+            fail('unexpected house: {}'.format(opt.name),
+                 'available houses: {}'.format('/'.join(hogwarts_info['avail_houses'].keys())))
+    elif opt.delete:
+        hogwarts_file = find_hogwarts(True)
+        hogwarts_info = yaml_load(hogwarts_file)
+        if opt.name in hogwarts_info['avail_houses']:
+            del hogwarts_info['avail_houses'][opt.name]
+            if opt.name == hogwarts_info['curr_house']:
+                hogwarts_info['curr_house'] = ''
+            yaml_dump(hogwarts_info, hogwarts_file)
+            success('deleted house {}, current house is {}'.format(opt.name,
+                                                                   hogwarts_info['curr_house']))
+        else:
+            fail('unexpected house: {}'.format(opt.name),
+                 'available houses: {}'.format('/'.join(hogwarts_info['avail_houses'].keys())))
+
+
+def run():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--name', '-n', required=True)
+    parser.add_argument('--resume', '-r', action='store_true', default=False)
+    parser.add_argument('--force', '-f', action='store_true', default=False)
+    parser.add_argument('--command', '-c')
+    opt = parser.parse_args()
+
+    hogwarts_file = find_hogwarts(True)
+    house_file = find_house('', True)
+
+    src_dir = Path.cwd()
+    if src_dir == hogwarts_file.parent:
+        fail('curr directory contains .hogwarts.')
+    if str(house_file).startswith(str(src_dir)):
+        fail('curr directory contains {}.'.format(house_file.relative_to(src_dir)))
+
+    wizard_dir = house_file.parent / opt.name
+    force, resume = opt.force, opt.resume
+    while wizard_dir.is_dir():
+        if force:
+            shutil.rmtree(str(wizard_dir))
+            break
+        elif resume:
+            break
+        else:
+            log('''wizard {} already exist at {}, '''
+                '''overwrite/resume/break? [Y/r/n] '''.format(
+                    repr(opt.name), wizard_dir), end='')
+            choice = input().strip().casefold()
+            if choice == 'y':
+                force = True
+            elif choice == 'r':
+                resume = True
+            elif choice == 'n':
+                sys.exit()
+
+    if resume:
+        wizard_file = find_wizard(opt.name, True)
+        wizard = str(wizard_file.parent.relative_to(house_file.parent))
+        runway_info = yaml_load(wizard_file)
+        trg_dir = wizard_file.parent / runway_info['trg_dir_from_wizard']
+        cd_and_execute(trg_dir, runway_info['sub_command'], wizard)
+    else:
+        if opt.command is None:
+            argparse.ArgumentError('command required')
+        wizard_dir.mkdir(parents=True, exist_ok=True)
+        wizard_file = wizard_dir / '.wizard'
+        trg_dir = wizard_dir / src_dir.name
+        runway_info = {
+            'date': time.strftime('%Y-%m-%d-%H:%M:%S'),
+            'src_dir_from_hogwarts': str(src_dir.relative_to(hogwarts_file.parent)),
+            'trg_dir_from_wizard': src_dir.name,
+            'sub_command': opt.command,
+            'full_command': get_full_command(sys.argv),
+        }
+        yaml_dump(runway_info, wizard_file)
+        shutil.copytree(str(src_dir), str(trg_dir))
+        cd_and_execute(trg_dir, opt.command, opt.name)
+
+
+def ls():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('name', required=True)
+    opt = parser.parse_args()
+    name = opt.name.casefold
+    if name in ['hogwarts', 'all']:
+        log('hogwarts:\t{}'.format(find_hogwarts(True).parent))
+    if name in ['house', 'all']:
+        log('house:\t{}'.format(find_house('', True).parent))
+    if name in ['wizard', 'all']:
+        log('wizard:\t{}'.format(find_wizard('', True).parent))
+
+
+# ===============================================
+# Test
+# ===============================================
+
+
+if __name__ == '__main__':
+    success('hogwarts', 'gryffindor')
