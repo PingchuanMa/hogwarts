@@ -158,7 +158,7 @@ def manage():
                        help='switch current house')
     group.add_argument('--delete', '-d', action='store_true',
                        help='delete a house')
-    parser.add_argument('name', required=True)
+    parser.add_argument('name')
     opt = parser.parse_args()
     if opt.build:
         if opt.name.casefold() == 'hogwarts':
@@ -196,7 +196,7 @@ def manage():
 
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--name', '-n', required=True)
+    parser.add_argument('name')
     parser.add_argument('--resume', '-r', action='store_true', default=False)
     parser.add_argument('--force', '-f', action='store_true', default=False)
     parser.add_argument('--command', '-c')
@@ -257,7 +257,7 @@ def run():
 
 def ls():
     parser = argparse.ArgumentParser()
-    parser.add_argument('name', required=True)
+    parser.add_argument('name')
     opt = parser.parse_args()
     name = opt.name.casefold
     if name in ['hogwarts', 'all']:
