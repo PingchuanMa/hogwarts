@@ -239,7 +239,7 @@ def run():
         cd_and_execute(trg_dir, runway_info['sub_command'], wizard)
     else:
         if opt.command is None:
-            argparse.ArgumentError('command required')
+            raise argparse.ArgumentError('command required')
         wizard_dir.mkdir(parents=True, exist_ok=True)
         wizard_file = wizard_dir / '.wizard'
         trg_dir = wizard_dir / src_dir.name
