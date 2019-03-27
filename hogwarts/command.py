@@ -120,14 +120,14 @@ def build_house():
     find_house(Path.cwd().name, False)
     house_file = Path.cwd() / '.house'
     yaml_dump({}, house_file)
-    previous_house = hogwarts_file['curr_house']
-    hogwarts_file['curr_house'] = Path.cwd().name
-    hogwarts_info['avail_houses'][hogwarts_file['curr_house']] = \
+    prev_house = hogwarts_info['curr_house']
+    hogwarts_info['curr_house'] = Path.cwd().name
+    hogwarts_info['avail_houses'][hogwarts_info['curr_house']] = \
         str(house_file.parent.relative_to(hogwarts_file.parent))
     yaml_dump(hogwarts_info, hogwarts_file)
     success('built house at {}'.format(house_file),
-            'switched house from {} to {}'.format(previous_house,
-                                                  hogwarts_file['curr_house']))
+            'switched house from {} to {}'.format(
+                prev_house, hogwarts_info['curr_house']))
 
 
 def cd_and_execute(trg_dir, command, wizard):
@@ -171,11 +171,11 @@ def manage():
         hogwarts_file = find_hogwarts(True)
         hogwarts_info = yaml_load(hogwarts_file)
         if opt.name in hogwarts_info['avail_houses']:
-            previous_house = hogwarts_info['curr_house']
+            prev_house = hogwarts_info['curr_house']
             hogwarts_info['curr_house'] = opt.name
             yaml_dump(hogwarts_info, hogwarts_file)
-            success('switched house from {} to {}'.format(previous_house,
-                                                          hogwarts_file['curr_house']))
+            success('switched house from {} to {}'.format(prev_house,
+                                                          hogwarts_info['curr_house']))
         else:
             fail('unexpected house: {}'.format(opt.name),
                  'available houses: {}'.format('/'.join(hogwarts_info['avail_houses'].keys())))
@@ -259,13 +259,13 @@ def ls():
     parser = argparse.ArgumentParser()
     parser.add_argument('name')
     opt = parser.parse_args()
-    name = opt.name.casefold
+    name = opt.name.casefold()
     if name in ['hogwarts', 'all']:
-        log('hogwarts:\t{}'.format(find_hogwarts(True).parent))
+        log('hogwarts: {}'.format(find_hogwarts(True).parent))
     if name in ['house', 'all']:
-        log('house:\t{}'.format(find_house('', True).parent))
-    if name in ['wizard', 'all']:
-        log('wizard:\t{}'.format(find_wizard('', True).parent))
+        log('house:    {}'.format(find_house('', True).parent))
+    if name == 'wizard':
+        log('wizard: {}'.format(find_wizard('', True).parent))
 
 
 # ===============================================
