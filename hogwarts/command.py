@@ -12,9 +12,9 @@ from pathlib import Path
 from hogwarts import log
 
 
-# ===============================================
+# ================
 # Helper functions
-# ===============================================
+# ================
 
 
 def yaml_dump(obj, path):
@@ -140,13 +140,13 @@ def cd_and_execute(trg_dir, command, wizard):
             process.wait()
             break
         except KeyboardInterrupt:
-            print('''\tPlease double press Ctrl-C within 1 second to kill job.'''
-                  '''It will take several seconds to shutdown ...''', flush=True)
+            print('\tPlease double press Ctrl-C within 1 second to kill job.'
+                  'It will take several seconds to shutdown ...', flush=True)
 
 
-# ===============================================
+# =======================
 # Shell script interfaces
-# ===============================================
+# =======================
 
 
 def control():
@@ -220,9 +220,8 @@ def run():
         elif resume:
             break
         else:
-            log('''wizard {} already exist at {}, '''
-                '''overwrite/resume/break? [Y/r/n] '''.format(
-                    repr(opt.name), wizard_dir), end='')
+            log('wizard {} already exist at {}, '
+                'overwrite/resume/break? [Y/r/n] '.format(repr(opt.name), wizard_dir), end='')
             choice = input().strip().casefold()
             if choice == 'y':
                 force = True
@@ -260,9 +259,9 @@ def ls():
     log('house:    {}'.format(find_house('', True).parent))
 
 
-# ===============================================
+# ====
 # Test
-# ===============================================
+# ====
 
 
 if __name__ == '__main__':
