@@ -9,7 +9,7 @@ setup(
     install_requires=[
         'pyyaml',
         'tensorboardX',
-        'pytorch',
+        'torch',
     ],
     entry_points={
         'console_scripts': [
