@@ -6,12 +6,23 @@ import math
 import torch
 import multiprocessing
 import functools
+import socket
 import torch.distributed as dist
 
 
 def _check_tensor_list(tensor_list):
     if isinstance(tensor_list, torch.Tensor):
         raise ValueError('tensor_list should be list of tensors')
+
+
+def _get_host_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return ip
 
 
 def get_world_size():
@@ -112,7 +123,7 @@ def dist_segment(full_size, world_size=None, rank=None):
     return offset, part_size
 
 
-def dist_init(backend):
+def dist_init(port=9774, backend='gloo'):
     os.environ['DISTRIBUTED_BACKEND'] = backend
     if multiprocessing.get_start_method(allow_none=True) != 'fork':
         multiprocessing.set_start_method('fork', force=True)
@@ -126,6 +137,8 @@ def dist_init(backend):
     if world_size == 1:
         rank, world_size = 0, 1
     else:
+        os.environ['MASTER_PORT'] = str(port)
+        os.environ['MASTER_ADDR'] = str(_get_host_ip())
         os.environ['WORLD_SIZE'] = str(world_size)
         os.environ['RANK'] = str(rank)
         dist.init_process_group(backend=backend)
