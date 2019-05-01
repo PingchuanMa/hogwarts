@@ -39,7 +39,7 @@ def traverse_dfs(root, mode, continue_type, key_prefix=''):
                 yield kv
 
 
-def traverse_bfs(root, mode):
+def traverse_bfs(root, mode, continue_type):
     q = [(root, '')]
     while len(q) > 0:
         child, key_prefix = q.pop(0)
@@ -58,9 +58,9 @@ def init_assign(config, d, traverse):
         sub_cfg[sub_key] = value
 
 
-###############################################################
+# =========================================================
 # main class
-###############################################################
+# =========================================================
 
 class Config(dict):
 
@@ -87,9 +87,9 @@ class Config(dict):
     def __call__(self, *args, **kwargs):
         return Config(self, *args, **kwargs)
 
-    ###########################################################
+    # =========================================================
     # support for pickle
-    ###########################################################
+    # =========================================================
 
     def __setstate__(self, state):
         init_assign(self, state, traverse=True)
@@ -102,9 +102,9 @@ class Config(dict):
             d[key] = value
         return d
 
-    ###########################################################
+    # =========================================================
     # access by '.' -> access by '[]'
-    ###########################################################
+    # =========================================================
 
     def __getattr__(self, key):
         return self[key]
@@ -115,9 +115,9 @@ class Config(dict):
     def __delattr__(self, key):
         del self[key]
 
-    ###########################################################
+    # =========================================================
     # access by '[]'
-    ###########################################################
+    # =========================================================
 
     def __getitem__(self, key):
         sub_cfg, sub_key = consume_dots(self, key, create_default=False)
@@ -132,9 +132,9 @@ class Config(dict):
         dict.__delitem__(sub_cfg, sub_key)
         # del self.__dict__[key]
 
-    ###########################################################
+    # =========================================================
     # access by 'in'
-    ###########################################################
+    # =========================================================
 
     def __contains__(self, key):
         try:
@@ -143,9 +143,9 @@ class Config(dict):
             return False
         return dict.__contains__(sub_cfg, sub_key)
 
-    ###########################################################
+    # =========================================================
     # traverse keys / values/ items
-    ###########################################################
+    # =========================================================
 
     def all_keys(self, order='dfs'):
         traverse = {'dfs': traverse_dfs, 'bfs': traverse_bfs}[order]
@@ -162,9 +162,9 @@ class Config(dict):
         for key, value in traverse(self, 'item', continue_type=Config):
             yield key, value
 
-    ###########################################################
+    # =========================================================
     # for command line arguments
-    ###########################################################
+    # =========================================================
 
     def parse_args(self, cmd_args=None, strict=True):
         unknown_args = []
@@ -220,17 +220,17 @@ class Config(dict):
 
         return unknown_args
 
-    ###########################################################
+    # =========================================================
     # for key reference
-    ###########################################################
+    # =========================================================
 
     def parse_refs(self, subconf=None, stack_depth=1, max_stack_depth=10):
         if stack_depth > max_stack_depth:
-            raise Exception((
-                                'Recursively calling `parse_refs` too many times with stack depth > %d. A circular reference may exists in your config.\n'
-                                'If deeper calling stack is really needed, please call `parse_refs` with extra argument like: `parse_refs(max_stack_depth = 9999)`'
-                            ) % max_stack_depth
-                            )
+            raise Exception('Recursively calling `parse_refs` too many times with stack depth > {}. '
+                            'A circular reference may exists in your config.\n'
+                            'If deeper calling stack is really needed, '
+                            'please call `parse_refs` with extra argument like: '
+                            '`parse_refs(max_stack_depth = 9999)`'.format(max_stack_depth))
         if subconf is None:
             subconf = self
         for key in subconf.keys():
