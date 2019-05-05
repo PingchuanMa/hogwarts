@@ -25,7 +25,7 @@ def yaml_dump(obj, path):
 
 def yaml_load(path):
     with Path(path).open('r') as f:
-        d = yaml.load(f)
+        d = yaml.load(f, Loader=yaml.FullLoader)
     return d
 
 
