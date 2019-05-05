@@ -1,4 +1,6 @@
-from . import config
 from . import util
+from . import command
+from . import record
 
-from .logger import *
+from .logger import log
+from .config import Config

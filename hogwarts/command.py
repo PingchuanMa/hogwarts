@@ -9,7 +9,8 @@ import shutil
 import argparse
 import subprocess
 from pathlib import Path
-from hogwarts import log
+
+from .logger import log
 
 
 # =========================================================
