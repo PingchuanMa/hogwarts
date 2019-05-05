@@ -1,4 +1,4 @@
-__all__ = ['WarmupMultiStepLR', 'WarmupCosineAnnealingLR', 'WarmupExponentialLR']
+__all__ = ['WarmupMultiStepLR', 'WarmupCosineAnnealingLR', 'WarmupLinearLR', 'WarmupExponentialLR']
 
 import math
 from bisect import bisect_right
