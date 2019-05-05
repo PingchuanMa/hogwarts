@@ -73,7 +73,7 @@ class Config(dict):
                         raw_dict = json5.load(f)
                 elif arg.endswith('.yaml'):
                     with open(arg) as f:
-                        raw_dict = yaml.load(f)
+                        raw_dict = yaml.load(f, loader=yaml.FullLoader)
                 else:
                     raise Exception('unknown file format %s' % arg)
                 init_assign(self, raw_dict, traverse=True)
