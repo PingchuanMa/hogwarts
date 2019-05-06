@@ -1,13 +1,27 @@
 __all__ = ['get_world_size', 'get_rank', 'get_backend', 'barrier', 'all_reduce_mean', 'all_reduce_sum',
-           'all_reduce_max', 'all_reduce_min', 'broadcast', 'all_gather_cat', 'dist_segment', 'dist_init']
+           'all_reduce_max', 'all_reduce_min', 'broadcast', 'all_gather_cat', 'dist_segment', 'dist_init',
+           'get_current_device', 'set_device']
 
 import os
 import math
 import torch
-import multiprocessing
 import functools
 import socket
 import torch.distributed as dist
+import torch.multiprocessing as multiprocessing
+
+
+_CURRENT_DEVICE = torch.device('cpu')
+
+
+def get_current_device():
+    global _CURRENT_DEVICE
+    return _CURRENT_DEVICE
+
+
+def set_device(device):
+    global _CURRENT_DEVICE
+    _CURRENT_DEVICE = device
 
 
 def _check_tensor_list(tensor_list):
@@ -120,16 +134,21 @@ def dist_segment(full_size, world_size=None, rank=None):
     return offset, part_size
 
 
-def dist_init(port=9774, backend='gloo'):
+def dist_init(cuda=True, port=11442, backend='nccl'):
+    if not cuda and backend == 'nccl':
+        raise ValueError('nccl backend cannot be used without cuda')
     os.environ['DISTRIBUTED_BACKEND'] = backend
     if multiprocessing.get_start_method(allow_none=True) != 'fork':
         multiprocessing.set_start_method('fork', force=True)
     rank = get_rank()
     world_size = get_world_size()
-    if torch.cuda.is_available():
+    if cuda and torch.cuda.is_available():
         num_gpus = torch.cuda.device_count()
         gpu_id = rank % num_gpus
-        torch.cuda.set_device(gpu_id)
+        device = torch.device('cuda', gpu_id)
+    else:
+        device = torch.device('cpu')
+    set_device(device)
 
     if world_size == 1:
         rank, world_size = 0, 1

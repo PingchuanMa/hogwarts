@@ -27,7 +27,8 @@ def sync_grad_sum(network):
 def sync_bn_stat(network):
     tensor_list = []
     for mod in network.modules():
-        if type(mod) == torch.nn.BatchNorm2d:
+        if 'Norm' in mod.__class__.__name__:
             tensor_list.append(mod.running_mean)
             tensor_list.append(mod.running_var)
-    misc.all_reduce_mean(tensor_list)
+    if len(tensor_list) > 0:
+        misc.all_reduce_mean(tensor_list)
