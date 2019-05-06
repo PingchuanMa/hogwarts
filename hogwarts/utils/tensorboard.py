@@ -4,7 +4,8 @@ import shutil
 import struct
 from glob import glob
 from pathlib import Path
-from tensorboardX import SummaryWriter, proto
+from tensorboardX import SummaryWriter
+from tensorboardX.proto.event_pb2 import Event
 
 
 def init_tensorboard(log_dir, trunc_anchor):
@@ -15,7 +16,7 @@ def init_tensorboard(log_dir, trunc_anchor):
 
 
 def anchor_tensorboard(writer, anchor):
-    writer.add_scalar('hogwarts/traceback', anchor, anchor)
+    writer.add_scalar('hogwarts/progress', anchor, anchor)
 
 
 def truncate_tensorboard(log_dir, trunc_anchor):
@@ -29,13 +30,13 @@ def truncate_tensorboard(log_dir, trunc_anchor):
                 length = struct.unpack('Q', length)[0]
                 f.read(4)
                 event = f.read(length)
-                event = proto.event_pb2.Event.FromString(event)
+                event = Event.FromString(event)
                 f.read(4)
                 trunc_length += 16 + length
                 try:
                     tag = event.summary.value[0].tag
                     value = event.summary.value[0].simple_value
-                    if tag == 'hogwarts/traceback' and value == trunc_anchor:
+                    if tag == 'hogwarts/progress' and value == trunc_anchor:
                         break
                 except:
                     pass
