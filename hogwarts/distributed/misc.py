@@ -1,6 +1,6 @@
 __all__ = ['get_world_size', 'get_rank', 'get_backend', 'barrier', 'all_reduce_mean', 'all_reduce_sum',
            'all_reduce_max', 'all_reduce_min', 'broadcast', 'all_gather_cat', 'dist_segment', 'dist_init',
-           'get_current_device', 'set_device']
+           'get_device', 'set_device']
 
 import os
 import math
