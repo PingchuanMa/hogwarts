@@ -1,4 +1,4 @@
-__all__ = ['sync_state', 'sync_grad_mean', 'sync_grad_sum', 'sync_bn_stat']
+__all__ = ['sync_state', 'sync_grad_mean', 'sync_grad_sum', 'sync_norm_stat']
 
 import torch
 from . import misc
@@ -24,11 +24,12 @@ def sync_grad_sum(network):
 
 
 @misc.MultiprocessingOnly(inplace=True)
-def sync_bn_stat(network):
+def sync_norm_stat(network):
     tensor_list = []
     for mod in network.modules():
         if 'Norm' in mod.__class__.__name__:
-            tensor_list.append(mod.running_mean)
-            tensor_list.append(mod.running_var)
+            if hasattr(mod, 'running_mean') and hasattr(mod, 'running_var'):
+                tensor_list.append(mod.running_mean)
+                tensor_list.append(mod.running_var)
     if len(tensor_list) > 0:
         misc.all_reduce_mean(tensor_list)
