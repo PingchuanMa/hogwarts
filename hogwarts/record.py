@@ -1,6 +1,7 @@
 import time
 from collections import OrderedDict, deque
 from contextlib import contextmanager
+from collections import Iterable
 
 
 class RecordManager:
@@ -97,7 +98,10 @@ class MeanRecord:
 
     def record_value(self, value):
         self.empty = False
-        self.window.append(value)
+        if isinstance(value, Iterable):
+            self.window.extend(value)
+        else:
+            self.window.append(value)
 
     def summary(self):
         assert not self.empty, 'empty record'
@@ -118,7 +122,10 @@ class SumRecord:
         if self.window_size == 'inf':
             self.value += value
         else:
-            self.window.append(value)
+            if isinstance(value, Iterable):
+                self.window.extend(value)
+            else:
+                self.window.append(value)
 
     def summary(self):
         assert not self.empty, 'empty record'

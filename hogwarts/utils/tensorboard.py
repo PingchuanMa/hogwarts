@@ -1,4 +1,4 @@
-__all__ = ['init_tensorboard', 'anchor_tensorboard', 'truncate_tensorboard']
+__all__ = ['init', 'checkpoint', 'truncate']
 
 import shutil
 import struct
@@ -8,18 +8,18 @@ from tensorboardX import SummaryWriter
 from tensorboardX.proto.event_pb2 import Event
 
 
-def init_tensorboard(log_dir, trunc_anchor):
+def init(log_dir, trunc_anchor):
     if trunc_anchor > 0:
-        truncate_tensorboard(log_dir, trunc_anchor)
+        truncate(log_dir, trunc_anchor)
     writer = SummaryWriter(log_dir)
     return writer
 
 
-def anchor_tensorboard(writer, anchor):
+def checkpoint(writer, anchor):
     writer.add_scalar('hogwarts/progress', anchor, anchor)
 
 
-def truncate_tensorboard(log_dir, trunc_anchor):
+def truncate(log_dir, trunc_anchor):
     log_dir = Path(log_dir)
     for event_fpath in log_dir.glob('events*'):
         with event_fpath.open('rb+') as f:
