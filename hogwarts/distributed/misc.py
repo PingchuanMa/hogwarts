@@ -11,17 +11,17 @@ import torch.distributed as dist
 import torch.multiprocessing as multiprocessing
 
 
-_CURRENT_DEVICE = torch.device('cpu')
+_DEVICE = torch.device('cpu')
 
 
-def get_current_device():
-    global _CURRENT_DEVICE
-    return _CURRENT_DEVICE
+def get_device():
+    global _DEVICE
+    return _DEVICE
 
 
 def set_device(device):
-    global _CURRENT_DEVICE
-    _CURRENT_DEVICE = device
+    global _DEVICE
+    _DEVICE = device
 
 
 def _check_tensor_list(tensor_list):
