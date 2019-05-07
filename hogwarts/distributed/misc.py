@@ -138,8 +138,8 @@ def dist_init(cuda=True, port=11442, backend='nccl'):
     if not cuda and backend == 'nccl':
         raise ValueError('nccl backend cannot be used without cuda')
     os.environ['DISTRIBUTED_BACKEND'] = backend
-    if multiprocessing.get_start_method(allow_none=True) != 'fork':
-        multiprocessing.set_start_method('fork', force=True)
+    if multiprocessing.get_start_method(allow_none=True) != 'forkserver':
+        multiprocessing.set_start_method('forkserver', force=True)
     rank = get_rank()
     world_size = get_world_size()
     if cuda and torch.cuda.is_available():
