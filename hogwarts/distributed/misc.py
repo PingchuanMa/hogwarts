@@ -134,12 +134,12 @@ def dist_segment(full_size, world_size=None, rank=None):
     return offset, part_size
 
 
-def dist_init(cuda=True, port=11442, backend='nccl'):
+def dist_init(cuda=True, port=11442, backend='nccl', mp_method='forkserver'):
     if not cuda and backend == 'nccl':
         raise ValueError('nccl backend cannot be used without cuda')
     os.environ['DISTRIBUTED_BACKEND'] = backend
-    if multiprocessing.get_start_method(allow_none=True) != 'forkserver':
-        multiprocessing.set_start_method('forkserver', force=True)
+    if multiprocessing.get_start_method(allow_none=True) != mp_method:
+        multiprocessing.set_start_method(mp_method, force=True)
     rank = get_rank()
     world_size = get_world_size()
     if cuda and torch.cuda.is_available():
