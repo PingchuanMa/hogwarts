@@ -1,2 +1,2 @@
 from .misc import *
-from .simple_sync import *
+from .sync import *

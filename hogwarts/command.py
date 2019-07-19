@@ -3,12 +3,11 @@ __all__ = []
 import os
 import sys
 import time
-import yaml
-import shlex
 import shutil
 import argparse
 import subprocess
 from pathlib import Path
+import yaml
 
 from .logger import log
 

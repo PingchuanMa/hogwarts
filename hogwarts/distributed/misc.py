@@ -4,9 +4,9 @@ __all__ = ['get_world_size', 'get_rank', 'get_backend', 'barrier', 'all_reduce_m
 
 import os
 import math
-import torch
 import functools
 import socket
+import torch
 import torch.distributed as dist
 import torch.multiprocessing as multiprocessing
 

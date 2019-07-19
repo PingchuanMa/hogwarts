@@ -11,7 +11,7 @@ class RecordManager:
         self.ticks = dict()
 
     def record_value(self, key, value, window_size, summary_mode, group='default'):
-        assert window_size == 'inf' or (type(window_size) is int and window_size > 0), \
+        assert window_size == 'inf' or (isinstance(window_size, int) and window_size > 0), \
             'window_size should be positive integer or string "inf"'
         assert summary_mode in ['mean', 'sum', 'max', 'min'], 'summary_mode should be one of mean / sum / max / min'
         Record = {
@@ -25,7 +25,7 @@ class RecordManager:
         if key not in self.groups[group]:
             self.groups[group][key] = Record(window_size)
         record = self.groups[group][key]
-        if type(record) is not Record:
+        if not isinstance(record, Record):
             raise TypeError('renew record {} in group {} with different summary_mode'
                             'is not allowed'.format(repr(key), repr(group)))
         if record.window_size != window_size:
@@ -38,7 +38,7 @@ class RecordManager:
 
     def record_tock(self, key, window_size, summary_mode, group='default'):
         if key not in self.ticks:
-            raise Exception('key %s hasn\'t been ticked' % repr(key))
+            raise Exception('key {} has not been ticked'.format(repr(key)))
         value = time.time() - self.ticks[key]
         self.record_value(key, value, window_size, summary_mode, group)
 
@@ -50,9 +50,9 @@ class RecordManager:
 
     def summary(self, key, group='default'):
         if group not in self.groups:
-            raise KeyError('group %s not exists' % repr(group))
+            raise KeyError('group {} not exists'.format(repr(group)))
         if key not in self.groups[group]:
-            raise KeyError('record %s not exists' % repr(key))
+            raise KeyError('record {} not exists'.format(repr(key)))
         return self.groups[group][key].summary()
 
     # =========================
@@ -61,29 +61,29 @@ class RecordManager:
 
     def keys(self, group='default'):
         if group not in self.groups:
-            raise KeyError('group %s not exists' % repr(group))
+            raise KeyError('group {} not exists'.format(repr(group)))
         return list(self.groups[group].keys())
 
     def values(self, group='default'):
         if group not in self.groups:
-            raise KeyError('group %s not exists' % repr(group))
+            raise KeyError('group {} not exists'.format(repr(group)))
         return [record.summary() for record in self.groups[group].values()]
 
     def items(self, group='default'):
         if group not in self.groups:
-            raise KeyError('group %s not exists' % repr(group))
+            raise KeyError('group {} not exists'.format(repr(group)))
         return [(key, record.summary()) for key, record in self.groups[group].items()]
 
     def clear_record(self, key, group='default'):
         if group not in self.groups:
-            raise KeyError('group %s not exists' % repr(group))
+            raise KeyError('group {} not exists'.format(repr(group)))
         if key not in self.groups[group]:
-            raise KeyError('record %s not exists' % repr(key))
+            raise KeyError('record {} not exists'.format(repr(key)))
         del self.groups[group][key]
 
     def clear_records(self, group='default'):
         if group not in self.groups:
-            raise KeyError('group %s not exists' % repr(group))
+            raise KeyError('group {} not exists'.format(repr(group)))
         self.groups[group].clear()
 
 

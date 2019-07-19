@@ -1,0 +1,54 @@
+__all__ = ['BaseDataset']
+
+
+import random
+import logging
+import traceback
+from torch.utils.data import Dataset
+
+
+class BaseDataset(Dataset):
+
+    def __init__(self, pseudo_index=-1, skip_broken=True, new_index='next'):
+        super(BaseDataset, self).__init__()
+        self.pseudo_index = pseudo_index
+        self.skip_broken = skip_broken
+        self.new_index = new_index
+        if new_index not in ('next', 'rand'):
+            raise ValueError('new_index not one of ["next", "rand"]')
+
+    def __getitem__(self, index):
+        # in some pytorch versions, input index will be torch.Tensor
+        index = int(index)
+
+        # if sampler produce pseudo_index, randomly sample an index, and mark it as psudo
+        if index == self.pseudo_index:
+            index = random.randrange(len(self))
+            psudo = 1
+        else:
+            psudo = 0
+
+        while True:
+            try:
+                sample = self.getitem(index)
+                break
+            except Exception as e:
+                if self.skip_broken and not isinstance(e, NotImplementedError):
+                    if self.new_index == 'next':
+                        new_index = (index + 1) % len(self)
+                    else:
+                        new_index = random.randrange(len(self))
+                    logging.warning('skip broken index [{}], use next index [{}]'.format(index, new_index))
+                    index = new_index
+                else:
+                    logging.error('index [{}] broken'.format(index))
+                    traceback.print_exc()
+                    logging.error(e)
+                    raise e
+
+        sample['index'] = index
+        sample['psudo'] = psudo
+        return sample
+
+    def getitem(self, index):
+        raise NotImplementedError

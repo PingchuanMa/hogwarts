@@ -1,8 +1,6 @@
 __all__ = ['init', 'checkpoint', 'truncate']
 
-import shutil
 import struct
-from glob import glob
 from pathlib import Path
 from tensorboardX import SummaryWriter
 from tensorboardX.proto.event_pb2 import Event
@@ -38,7 +36,7 @@ def truncate(log_dir, trunc_anchor):
                     value = event.summary.value[0].simple_value
                     if tag == 'hogwarts/progress' and value == trunc_anchor:
                         break
-                except:
+                except Exception:
                     pass
 
             f.seek(0)
