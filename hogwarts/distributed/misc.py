@@ -75,7 +75,7 @@ def barrier():
 def all_reduce_mean(tensor_list):
     _check_tensor_list(tensor_list)
     for tensor in tensor_list:
-        dist.all_reduce(tensor, op=dist.reduce_op.SUM)
+        dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
         tensor.div_(get_world_size())
 
 
@@ -85,14 +85,14 @@ def all_reduce_sum(tensor_list):
     if isinstance(tensor_list, torch.Tensor):
         raise ValueError('tensor_list should be list of tensors')
     for tensor in tensor_list:
-        dist.all_reduce(tensor, op=dist.reduce_op.SUM)
+        dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
 
 
 @MultiprocessingOnly(inplace=True)
 def all_reduce_max(tensor_list):
     _check_tensor_list(tensor_list)
     for tensor in tensor_list:
-        dist.all_reduce(tensor, op=dist.reduce_op.MAX)
+        dist.all_reduce(tensor, op=dist.ReduceOp.MAX)
 
 
 @MultiprocessingOnly(inplace=True)
@@ -100,7 +100,7 @@ def all_reduce_min(tensor_list):
     _check_tensor_list(tensor_list)
     for tensor in tensor_list:
         tensor.neg_()
-        dist.all_reduce(tensor, op=dist.reduce_op.MAX)
+        dist.all_reduce(tensor, op=dist.ReduceOp.MAX)
         tensor.neg_()
 
 
