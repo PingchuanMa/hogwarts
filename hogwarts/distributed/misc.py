@@ -146,6 +146,7 @@ def dist_init(cuda=True, port=11442, backend='nccl', mp_method='forkserver'):
         num_gpus = torch.cuda.device_count()
         gpu_id = rank % num_gpus
         device = torch.device('cuda', gpu_id)
+        torch.cuda.set_device(device)
     else:
         device = torch.device('cpu')
     set_device(device)
