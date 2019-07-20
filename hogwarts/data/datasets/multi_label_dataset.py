@@ -15,13 +15,14 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 class MultiLabelDataset(BaseDataset):
 
     def __init__(self, imglist, root, reader, transform, num_classes,
-                 maxlen=None, dummy_read=False, dummy_size=None, **kwargs):
+                 img_mode='RGB', maxlen=None, dummy_read=False, dummy_size=None, **kwargs):
         super(MultiLabelDataset, self).__init__(**kwargs)
 
         self.root = root
         self.reader = reader
         self.transform = transform
         self.num_classes = num_classes
+        self.img_mode = img_mode
         self.maxlen = maxlen
         self.dummy_read = dummy_read
         self.dummy_size = dummy_size
@@ -58,6 +59,7 @@ class MultiLabelDataset(BaseDataset):
                 sample['data'] = torch.rand(self.dummy_size)
             else:
                 image = Image.open(buff)
+                image = image.convert(self.img_mode)
                 sample['data'] = self.transform(image)
         except Exception as e:
             logging.error('[{}] broken'.format(path))
