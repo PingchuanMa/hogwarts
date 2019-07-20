@@ -9,7 +9,6 @@ from ... import distributed as dist
 class DistributedSampler(Sampler):
 
     def __init__(self, dataset, shuffle=False, pseudo_index=None):
-        super(DistributedSampler, self).__init__()
         self.dataset = dataset
         self.shuffle = shuffle
         self.pseudo_index = pseudo_index
