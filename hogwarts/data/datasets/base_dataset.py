@@ -24,9 +24,9 @@ class BaseDataset(Dataset):
         # if sampler produce pseudo_index, randomly sample an index, and mark it as psudo
         if index == self.pseudo_index:
             index = random.randrange(len(self))
-            psudo = 1
+            pseudo = 1
         else:
-            psudo = 0
+            pseudo = 0
 
         while True:
             try:
@@ -47,7 +47,7 @@ class BaseDataset(Dataset):
                     raise e
 
         sample['index'] = index
-        sample['psudo'] = psudo
+        sample['pseudo'] = pseudo
         return sample
 
     def getitem(self, index):
