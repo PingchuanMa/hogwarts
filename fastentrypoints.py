@@ -45,7 +45,6 @@ __requires__ = '{3}'
 import re
 import sys
 
-import {3}
 from {0} import {1}
 
 if __name__ == '__main__':
