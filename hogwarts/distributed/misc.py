@@ -1,6 +1,6 @@
-__all__ = ['get_world_size', 'get_rank', 'get_backend', 'barrier', 'all_reduce_mean', 'all_reduce_sum',
-           'all_reduce_max', 'all_reduce_min', 'broadcast', 'all_gather_cat', 'dist_segment', 'dist_init',
-           'get_device', 'set_device']
+__all__ = ['get_world_size', 'get_rank', 'get_backend', 'barrier', 'all_reduce_sum',
+           'all_reduce_max', 'all_reduce_min', 'broadcast', 'all_gather_cat', 'dist_segment',
+           'dist_init', 'get_device', 'set_device', 'torch_dist_init']
 
 import os
 import math
@@ -69,14 +69,6 @@ def barrier():
         sync_tensor = sync_tensor.cuda()
     dist.all_reduce(sync_tensor)
     _ = sync_tensor.item()
-
-
-@MultiprocessingOnly(inplace=True)
-def all_reduce_mean(tensor_list):
-    _check_tensor_list(tensor_list)
-    for tensor in tensor_list:
-        dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
-        tensor.div_(get_world_size())
 
 
 @MultiprocessingOnly(inplace=True)
@@ -163,10 +155,10 @@ def dist_init(cuda=True, port=11442, backend='nccl', mp_method='forkserver'):
     return rank, world_size
 
 
-def torch_dist_init(backend='nccl', mp_method='fork'):
+def torch_dist_init(local_rank, backend='nccl', mp_method='fork'):
     if multiprocessing.get_start_method(allow_none=True) != mp_method:
         multiprocessing.set_start_method(mp_method, force=True)
     rank, world_size = local_rank, os.environ['WORLD_SIZE']
     torch.cuda.set_device(rank)
-    torch.distributed.init_process_group(backend='nccl',
-                                         init_method='env://')
+    torch.distributed.init_process_group(backend=backend, init_method='env://')
+    return rank, world_size
