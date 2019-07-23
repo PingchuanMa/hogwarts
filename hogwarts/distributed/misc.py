@@ -158,7 +158,7 @@ def dist_init(cuda=True, port=11442, backend='nccl', mp_method='forkserver'):
 def torch_dist_init(local_rank, backend='nccl', mp_method='fork'):
     if multiprocessing.get_start_method(allow_none=True) != mp_method:
         multiprocessing.set_start_method(mp_method, force=True)
-    rank, world_size = local_rank, os.environ['WORLD_SIZE']
+    rank, world_size = int(local_rank), int(os.environ['WORLD_SIZE'])
     torch.cuda.set_device(rank)
     torch.distributed.init_process_group(backend=backend, init_method='env://')
     return rank, world_size
