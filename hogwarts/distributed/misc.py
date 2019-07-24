@@ -37,17 +37,11 @@ def _get_host_ip():
 
 
 def get_world_size():
-    world_size = int(os.environ.get('WORLD_SIZE', -1))
-    if world_size == -1:
-        return int(os.environ.get('OMPI_COMM_WORLD_SIZE', 1))
-    return world_size
+    return int(os.environ.get('OMPI_COMM_WORLD_SIZE', 1))
 
 
 def get_rank():
-    rank = int(os.environ.get('LOCAL_RANK', -1))
-    if rank == -1:
-        return int(os.environ.get('OMPI_COMM_WORLD_RANK', 0))
-    return rank
+    return int(os.environ.get('OMPI_COMM_WORLD_RANK', 0))
 
 
 def get_backend():
@@ -163,6 +157,8 @@ def torch_dist_init(local_rank, backend='nccl', mp_method='fork'):
     if multiprocessing.get_start_method(allow_none=True) != mp_method:
         multiprocessing.set_start_method(mp_method, force=True)
     rank, world_size = int(local_rank), int(os.environ['WORLD_SIZE'])
+    os.environ['OMPI_COMM_WORLD_SIZE'] = str(world_size)
+    os.environ['OMPI_COMM_WORLD_RANK'] = str(rank)
     torch.cuda.set_device(rank)
     torch.distributed.init_process_group(backend=backend, init_method='env://')
     return rank, world_size
