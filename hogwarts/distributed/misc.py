@@ -37,11 +37,17 @@ def _get_host_ip():
 
 
 def get_world_size():
-    return int(os.environ.get('OMPI_COMM_WORLD_SIZE', 1))
+    world_size = int(os.environ.get('WORLD_SIZE', -1))
+    if world_size == -1:
+        return int(os.environ.get('OMPI_COMM_WORLD_SIZE', 1))
+    return world_size
 
 
 def get_rank():
-    return int(os.environ.get('OMPI_COMM_WORLD_RANK', 0))
+    rank = int(os.environ.get('LOCAL_RANK', -1))
+    if rank == -1:
+        return int(os.environ.get('OMPI_COMM_WORLD_RANK', 0))
+    return rank
 
 
 def get_backend():
@@ -74,8 +80,6 @@ def barrier():
 @MultiprocessingOnly(inplace=True)
 def all_reduce_sum(tensor_list):
     _check_tensor_list(tensor_list)
-    if isinstance(tensor_list, torch.Tensor):
-        raise ValueError('tensor_list should be list of tensors')
     for tensor in tensor_list:
         dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
 
