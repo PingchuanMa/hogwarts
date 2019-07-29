@@ -35,6 +35,7 @@ class WarmupLR(_LRScheduler):
         self.warmup_powers = to_tuple(warmup_powers, self.num_groups)
         self.warmup_lrs = to_tuple(warmup_lrs, self.num_groups)
         super(WarmupLR, self).__init__(optimizer, last_epoch)
+        self.init_weight_decay()
         assert self.num_groups == len(self.base_lrs)
 
     def get_lr(self):
@@ -51,6 +52,14 @@ class WarmupLR(_LRScheduler):
 
     def get_single_lr_after_warmup(self, group_index):
         raise NotImplementedError
+
+    def init_weight_decay(self):
+        for param_group in self.optimizer.param_groups:
+            param_group['weight_decay'] *= param_group['decay_mult']
+
+    def adjust(self):
+        for param_group in self.optimizer.param_groups:
+            param_group['lr'] *= param_group['lr_mult']
 
 
 class WarmupMultiStepLR(WarmupLR):
