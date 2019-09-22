@@ -1,7 +1,7 @@
 import time
 from collections import OrderedDict, deque
 from contextlib import contextmanager
-from collections import Iterable
+from collections.abc import Iterable
 
 
 class RecordManager:

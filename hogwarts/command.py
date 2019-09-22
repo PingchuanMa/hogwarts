@@ -9,8 +9,6 @@ import subprocess
 from pathlib import Path
 import yaml
 
-from .logger import log
-
 
 # =========================================================
 # Helper functions
@@ -41,12 +39,12 @@ def get_full_command(argv):
 
 
 def fail(*args):
-    log('Fail:\n\t{}'.format('\n\t'.join(args)))
+    print('Fail:\n\t{}'.format('\n\t'.join(args)), flush=True)
     sys.exit()
 
 
 def success(*args):
-    log('Success:\n\t{}'.format('\n\t'.join(args)))
+    print('Success:\n\t{}'.format('\n\t'.join(args)), flush=True)
 
 
 def trace_up(target_file):
@@ -166,7 +164,7 @@ def control():
         elif opt.name.casefold() == 'house':
             build_house()
         else:
-            fail('unexpect building: {} (hogwarts/house expected)'.format(opt.name))
+            fail('unexpected building: {} (hogwarts/house expected)'.format(opt.name))
     elif opt.switch:
         hogwarts_file = find_hogwarts(True)
         hogwarts_info = yaml_load(hogwarts_file)
@@ -220,8 +218,8 @@ def run():
         elif resume:
             break
         else:
-            log('wizard {} already exist at {}, '
-                'overwrite/resume/break? [Y/r/n] '.format(repr(opt.name), wizard_dir), end='')
+            print('wizard {} already exist at {}, '
+                 'overwrite/resume/break? [Y/r/n] '.format(repr(opt.name), wizard_dir), end='', flush=True)
             choice = input().strip().casefold()
             if choice == 'y':
                 force = True
@@ -238,7 +236,7 @@ def run():
         cd_and_execute(trg_dir, runway_info['sub_command'], wizard)
     else:
         if opt.command is None:
-            raise argparse.ArgumentError('command required')
+            raise argparse.ArgumentError(None, 'command required')
         wizard_dir.mkdir(parents=True, exist_ok=True)
         wizard_file = wizard_dir / '.wizard'
         trg_dir = wizard_dir / src_dir.name
@@ -255,8 +253,8 @@ def run():
 
 
 def ls():
-    log('hogwarts: {}'.format(find_hogwarts(True).parent))
-    log('house:    {}'.format(find_house('', True).parent))
+    print('hogwarts: {}'.format(find_hogwarts(True).parent), flush=True)
+    print('house:    {}'.format(find_house('', True).parent), flush=True)
 
 
 # =========================================================

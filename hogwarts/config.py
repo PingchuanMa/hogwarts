@@ -1,6 +1,6 @@
+import argparse
 import yaml
 import json5
-import argparse
 
 
 ###############################################################
@@ -15,18 +15,18 @@ def consume_dots(config, key, create_default):
         if create_default:
             dict.__setitem__(config, sub_key, Config())
         else:
-            raise KeyError('%s not exists' % str(key))
+            raise KeyError('{} not exists'.format(str(key)))
 
     if len(sub_keys) == 1:
         return config, sub_key
     else:
         sub_config = dict.__getitem__(config, sub_key)
-        if type(sub_config) != Config:
+        if not isinstance(sub_config, Config):
             if create_default:
                 sub_config = Config()
                 dict.__setitem__(config, sub_key, sub_config)
             else:
-                raise KeyError('%s not exists' % str(key))
+                raise KeyError('{} not exists'.format(str(key)))
         return consume_dots(sub_config, sub_keys[1], create_default)
 
 
@@ -34,7 +34,7 @@ def traverse_dfs(root, mode, continue_type, key_prefix=''):
     for key, value in root.items():
         full_key = '.'.join([key_prefix, key]).strip('.')
         yield {'key': full_key, 'value': value, 'item': (full_key, value)}[mode]
-        if type(value) == continue_type:
+        if isinstance(value, continue_type):
             for kv in traverse_dfs(value, mode, continue_type, full_key):
                 yield kv
 
@@ -46,14 +46,14 @@ def traverse_bfs(root, mode, continue_type):
         for key, value in child.items():
             full_key = '.'.join([key_prefix, key]).strip('.')
             yield {'key': full_key, 'value': value, 'item': (full_key, value)}[mode]
-            if type(value) == continue_type:
+            if isinstance(value, continue_type):
                 q.append((value, full_key))
 
 
 def init_assign(config, d, traverse):
     for full_key, value in traverse_dfs(d, 'item', continue_type=dict):
         # skip non-empty dict
-        if type(value) == dict and len(value) > 0: continue
+        if isinstance(value, dict) and value: continue
         sub_cfg, sub_key = consume_dots(config, full_key, create_default=True)
         sub_cfg[sub_key] = value
 
@@ -97,7 +97,7 @@ class Config(dict):
     def __getstate__(self):
         d = dict()
         for key, value in self.items():
-            if type(value) is Config:
+            if isinstance(value, Config):
                 value = value.__getstate__()
             d[key] = value
         return d
@@ -174,7 +174,7 @@ class Config(dict):
         index = 0
         while index < len(cmd_args):
             arg = cmd_args[index]
-            err_msg = 'invalid command line argument pattern: %s' % arg
+            err_msg = 'invalid command line argument pattern: {}'.format(arg)
             assert arg.startswith('--'), err_msg
             assert len(arg) > 2, err_msg
             assert arg[2] != '-', err_msg
@@ -184,8 +184,7 @@ class Config(dict):
                 key, full_value_str = arg.split('=')
                 index += 1
             else:
-                assert len(cmd_args) > index + 1, \
-                    'incomplete command line arguments'
+                assert len(cmd_args) > index + 1, 'incomplete command line arguments'
                 key = arg
                 full_value_str = cmd_args[index + 1]
                 index += 2
@@ -198,7 +197,7 @@ class Config(dict):
 
             if key not in self:
                 if strict:
-                    raise KeyError('%s not exists in config' % key)
+                    raise KeyError('{} not exists in config'.format(key))
                 else:
                     unknown_args.extend(['--' + key, full_value_str])
                     continue
@@ -226,24 +225,24 @@ class Config(dict):
 
     def parse_refs(self, subconf=None, stack_depth=1, max_stack_depth=10):
         if stack_depth > max_stack_depth:
-            raise Exception('Recursively calling `parse_refs` too many times with stack depth > {}. '
-                            'A circular reference may exists in your config.\n'
-                            'If deeper calling stack is really needed, '
-                            'please call `parse_refs` with extra argument like: '
-                            '`parse_refs(max_stack_depth = 9999)`'.format(max_stack_depth))
+            raise RecursionError('Recursively calling `parse_refs` too many times with stack depth > {}. '
+                                 'A circular reference may exists in your config.\n'
+                                 'If deeper calling stack is really needed, '
+                                 'please call `parse_refs` with extra argument like: '
+                                 '`parse_refs(max_stack_depth = 9999)`'.format(max_stack_depth))
         if subconf is None:
             subconf = self
         for key in subconf.keys():
             value = subconf[key]
-            if type(value) is str and value.startswith('@{') and value.endswith('}'):
+            if isinstance(value, str) and value.startswith('@{') and value.endswith('}'):
                 ref_key = value[2:-1]
                 ref_value = self[ref_key]
-                if type(ref_value) is str and ref_value.startswith('@{') and value.endswith('}'):
-                    raise Exception('Refering key %s to %s, but the value of %s is another reference value %s' % (
-                        repr(key), repr(value), repr(ref_key), repr(ref_value),
+                if isinstance(ref_value, str) and ref_value.startswith('@{') and value.endswith('}'):
+                    raise RuntimeError('Refering key {} to {}, but the value of {} is another reference value {}'.format(
+                        key, value, ref_key, ref_value,
                     ))
                 subconf[key] = ref_value
         for key in subconf.keys():
             value = subconf[key]
-            if type(value) is Config:
+            if isinstance(value, Config):
                 self.parse_refs(value, stack_depth + 1)
