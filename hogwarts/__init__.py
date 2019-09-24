@@ -6,5 +6,4 @@ from . import lr_schedulers
 from . import data
 from . import distributed
 
-from .logger import log
 from .config import Config
