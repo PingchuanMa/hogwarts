@@ -8,7 +8,6 @@ setup(
     zip_safe=False,
     install_requires=[
         'pyyaml',
-        'tensorboardX',
         'torch',
         'json5'
     ],
