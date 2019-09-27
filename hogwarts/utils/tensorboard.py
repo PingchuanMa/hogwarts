@@ -2,8 +2,8 @@ __all__ = ['init', 'checkpoint', 'truncate']
 
 import struct
 from pathlib import Path
-from tensorboardX import SummaryWriter
-from tensorboardX.proto.event_pb2 import Event
+from torch.utils.tensorboard import SummaryWriter
+from tensorboard.compat.proto.event_pb2 import Event
 
 
 def init(log_dir, trunc_anchor):

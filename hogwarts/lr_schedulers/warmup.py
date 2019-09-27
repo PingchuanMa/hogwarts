@@ -55,7 +55,8 @@ class WarmupLR(_LRScheduler):
 
     def init_weight_decay(self):
         for param_group in self.optimizer.param_groups:
-            param_group['weight_decay'] *= param_group['decay_mult']
+            if 'decay_mult' in param_group:
+                param_group['weight_decay'] *= param_group['decay_mult']
 
     def adjust(self):
         for param_group in self.optimizer.param_groups:

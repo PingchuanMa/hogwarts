@@ -1,4 +1,5 @@
 import time
+import statistics
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from collections.abc import Iterable
@@ -7,24 +8,28 @@ from collections.abc import Iterable
 class RecordManager:
     def __init__(self):
         self.groups = OrderedDict()
+        self.stats = OrderedDict()
         self.records = OrderedDict()
         self.ticks = dict()
 
     def record_value(self, key, value, window_size, summary_mode, group='default'):
-        assert window_size == 'inf' or (isinstance(window_size, int) and window_size > 0), \
-            'window_size should be positive integer or string "inf"'
-        assert summary_mode in ['mean', 'sum', 'max', 'min'], 'summary_mode should be one of mean / sum / max / min'
+        if window_size != 'inf' and (not isinstance(window_size, int) or window_size <= 0):
+            raise ValueError('window_size should be positive integer or string "inf"')
+        if summary_mode not in ['mean', 'sum', 'max', 'min', 'stat']:
+            raise ValueError('summary_mode should be one of mean / sum / max / min / stat')
         Record = {
             'mean': MeanRecord,
             'sum': SumRecord,
             'max': MaxRecord,
             'min': MinRecord,
+            'stat': StatRecord,
         }[summary_mode]
-        if group not in self.groups:
-            self.groups[group] = OrderedDict()
-        if key not in self.groups[group]:
-            self.groups[group][key] = Record(window_size)
-        record = self.groups[group][key]
+        groups = self.stats if summary_mode == 'stat' else self.groups
+        if group not in groups:
+            groups[group] = OrderedDict()
+        if key not in groups[group]:
+            groups[group][key] = Record(window_size)
+        record = groups[group][key]
         if not isinstance(record, Record):
             raise TypeError('renew record {} in group {} with different summary_mode'
                             'is not allowed'.format(repr(key), repr(group)))
@@ -48,43 +53,49 @@ class RecordManager:
         yield
         self.record_tock(key, window_size, summary_mode, group)
 
-    def summary(self, key, group='default'):
-        if group not in self.groups:
+    def summary(self, key, group='default', stat=False):
+        groups = self.stats if stat else self.groups
+        if group not in groups:
             raise KeyError('group {} not exists'.format(repr(group)))
-        if key not in self.groups[group]:
+        if key not in groups[group]:
             raise KeyError('record {} not exists'.format(repr(key)))
-        return self.groups[group][key].summary()
+        return groups[group][key].summary()
 
     # =========================
     # dictionary-like interface
     # =========================
 
-    def keys(self, group='default'):
-        if group not in self.groups:
+    def keys(self, group='default', stat=False):
+        groups = self.stats if stat else self.groups
+        if group not in groups:
             raise KeyError('group {} not exists'.format(repr(group)))
-        return list(self.groups[group].keys())
+        return list(groups[group].keys())
 
-    def values(self, group='default'):
-        if group not in self.groups:
+    def values(self, group='default', stat=False):
+        groups = self.stats if stat else self.groups
+        if group not in groups:
             raise KeyError('group {} not exists'.format(repr(group)))
-        return [record.summary() for record in self.groups[group].values()]
+        return [record.summary() for record in groups[group].values()]
 
-    def items(self, group='default'):
-        if group not in self.groups:
+    def items(self, group='default', stat=False):
+        groups = self.stats if stat else self.groups
+        if group not in groups:
             raise KeyError('group {} not exists'.format(repr(group)))
-        return [(key, record.summary()) for key, record in self.groups[group].items()]
+        return [(key, record.summary()) for key, record in groups[group].items()]
 
-    def clear_record(self, key, group='default'):
-        if group not in self.groups:
+    def clear_record(self, key, group='default', stat=False):
+        groups = self.stats if stat else self.groups
+        if group not in groups:
             raise KeyError('group {} not exists'.format(repr(group)))
-        if key not in self.groups[group]:
+        if key not in groups[group]:
             raise KeyError('record {} not exists'.format(repr(key)))
-        del self.groups[group][key]
+        del groups[group][key]
 
-    def clear_records(self, group='default'):
-        if group not in self.groups:
+    def clear_records(self, group='default', stat=False):
+        groups = self.stats if stat else self.groups
+        if group not in groups:
             raise KeyError('group {} not exists'.format(repr(group)))
-        self.groups[group].clear()
+        groups[group].clear()
 
 
 class MeanRecord:
@@ -164,3 +175,31 @@ class MinRecord(_MinMaxRecord):
 
 class MaxRecord(_MinMaxRecord):
     minmax = max
+
+
+class StatRecord:
+    def __init__(self, window_size):
+        self.empty = True
+        self.window_size = window_size
+        if window_size == 'inf':
+            self.window = []
+        else:
+            self.window = deque(maxlen=window_size)
+
+    def record_value(self, value):
+        self.empty = False
+        if isinstance(value, Iterable):
+            self.window.extend(value)
+        else:
+            self.window.append(value)
+
+    def summary(self):
+        assert not self.empty, 'empty record'
+        mean = statistics.mean(self.window)
+        var = statistics.variance(self.window, mean)
+        return {
+            'mean': mean,
+            'var': var,
+            'max': max(self.window),
+            'min': min(self.window)
+        }
