@@ -128,18 +128,13 @@ def build_house():
                 prev_house, hogwarts_info['curr_house']))
 
 
-def cd_and_execute(trg_dir, command, wizard):
-    os.chdir(str(trg_dir))
+def cd_and_execute(log_dir, trg_dir, command, wizard, hrank):
     env = os.environ.copy()
-    env['wizard'] = wizard
-    process = subprocess.Popen(command, shell=True, env=env)
-    while True:
-        try:
-            process.wait()
-            break
-        except KeyboardInterrupt:
-            print('\tPlease double press Ctrl-C within 1 second to kill job.'
-                  'It will take several seconds to shutdown ...', flush=True)
+    env['wizard'] = str(wizard)
+    env['log_dir'] = str(log_dir)
+    env['hrank'] = str(hrank)
+    process = subprocess.Popen(command, cwd=str(trg_dir.resolve()), shell=True, env=env)
+    return process
 
 
 # =========================================================
@@ -198,7 +193,12 @@ def run():
     parser.add_argument('--resume', '-r', action='store_true', default=False)
     parser.add_argument('--force', '-f', action='store_true', default=False)
     parser.add_argument('--command', '-c')
+    parser.add_argument('--hsize', '-s', type=int, default=1)
+    parser.add_argument('--parallel', '-p', action='store_true', default=False)
     opt = parser.parse_args()
+
+    assert opt.hsize > 0, 'world size smaller than 1!'
+    os.environ['hsize'] = str(opt.hsize)
 
     hogwarts_file = find_hogwarts(True)
     house_file = find_house('', True)
@@ -219,7 +219,7 @@ def run():
             break
         else:
             print('wizard {} already exist at {}, '
-                 'overwrite/resume/break? [Y/r/n] '.format(repr(opt.name), wizard_dir), end='', flush=True)
+                  'overwrite/resume/break? [Y/r/n] '.format(repr(opt.name), wizard_dir), end='', flush=True)
             choice = input().strip().casefold()
             if choice == 'y':
                 force = True
@@ -233,7 +233,29 @@ def run():
         wizard = str(wizard_file.parent.relative_to(house_file.parent))
         runway_info = yaml_load(wizard_file)
         trg_dir = wizard_file.parent / runway_info['trg_dir_from_wizard']
-        cd_and_execute(trg_dir, runway_info['sub_command'], wizard)
+        processes = []
+        for hrank in range(opt.hsize):
+            log_dir = wizard_dir / '{:d}'.format(hrank)
+            log_dir.mkdir(parents=True, exist_ok=True)
+            wizard = '{}/{:d}'.format(opt.name, hrank)
+            process = cd_and_execute(log_dir, trg_dir, runway_info['sub_command'], wizard, hrank)
+            if not opt.parallel:
+                try:
+                    while True:
+                        process.wait()
+                        break
+                except KeyboardInterrupt:
+                    print('\tPlease double press Ctrl-C within 1 second to kill job.'
+                          'It will take several seconds to shutdown ...', flush=True)
+                    break
+        if opt.parallel:
+            try:
+                for process in processes:
+                    while True:
+                        process.wait()
+            except KeyboardInterrupt:
+                for process in processes:
+                    process.kill()
     else:
         if opt.command is None:
             raise argparse.ArgumentError(None, 'command required')
@@ -248,8 +270,30 @@ def run():
             'full_command': get_full_command(sys.argv),
         }
         yaml_dump(runway_info, wizard_file)
-        shutil.copytree(str(src_dir), str(trg_dir))
-        cd_and_execute(trg_dir, opt.command, opt.name)
+        shutil.copytree(str(src_dir), str(wizard_dir / src_dir.name))
+        processes = []
+        for hrank in range(opt.hsize):
+            log_dir = wizard_dir / '{:d}'.format(hrank)
+            log_dir.mkdir(parents=True, exist_ok=True)
+            wizard = '{}/{:d}'.format(opt.name, hrank)
+            process = cd_and_execute(log_dir, trg_dir, opt.command, wizard, hrank)
+            if not opt.parallel:
+                try:
+                    while True:
+                        process.wait()
+                        break
+                except KeyboardInterrupt:
+                    print('\tPlease double press Ctrl-C within 1 second to kill job.'
+                          'It will take several seconds to shutdown ...', flush=True)
+                    break
+        if opt.parallel:
+            try:
+                for process in processes:
+                    while True:
+                        process.wait()
+            except KeyboardInterrupt:
+                for process in processes:
+                    process.kill()
 
 
 def ls():

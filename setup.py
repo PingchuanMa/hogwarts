@@ -10,6 +10,7 @@ setup(
         'pyyaml',
         'torch',
         'json5'
+        'tensorboard',
     ],
     entry_points={
         'console_scripts': [
