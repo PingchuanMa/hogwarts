@@ -239,6 +239,7 @@ def run():
             log_dir.mkdir(parents=True, exist_ok=True)
             wizard = '{}/{:d}'.format(opt.name, hrank)
             process = cd_and_execute(log_dir, trg_dir, runway_info['sub_command'], wizard, hrank)
+            processes.append(process)
             if not opt.parallel:
                 try:
                     while True:
@@ -251,8 +252,7 @@ def run():
         if opt.parallel:
             try:
                 for process in processes:
-                    while True:
-                        process.wait()
+                    process.wait()
             except KeyboardInterrupt:
                 for process in processes:
                     process.kill()
@@ -277,6 +277,7 @@ def run():
             log_dir.mkdir(parents=True, exist_ok=True)
             wizard = '{}/{:d}'.format(opt.name, hrank)
             process = cd_and_execute(log_dir, trg_dir, opt.command, wizard, hrank)
+            processes.append(process)
             if not opt.parallel:
                 try:
                     while True:
@@ -289,8 +290,7 @@ def run():
         if opt.parallel:
             try:
                 for process in processes:
-                    while True:
-                        process.wait()
+                    process.wait()
             except KeyboardInterrupt:
                 for process in processes:
                     process.kill()
