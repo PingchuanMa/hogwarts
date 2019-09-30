@@ -9,7 +9,7 @@ setup(
     install_requires=[
         'pyyaml',
         'torch',
-        'json5'
+        'json5',
         'tensorboard',
     ],
     entry_points={
