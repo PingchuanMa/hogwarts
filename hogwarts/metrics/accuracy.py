@@ -17,7 +17,7 @@ def topk_accuracies(output, label, ks=(1,)):
     accu_list = []
     for k in ks:
         accu = correct[:, :k].sum(1).mean()
-        accu_list.append(accu)
+        accu_list.append(accu.item())
     return accu_list
 
 

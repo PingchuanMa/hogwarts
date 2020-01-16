@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tensorboard.compat.proto.event_pb2 import Event
 
 
-def init(log_dir, trunc_anchor):
+def init(log_dir, trunc_anchor=0):
     if trunc_anchor > 0:
         truncate(log_dir, trunc_anchor)
     writer = SummaryWriter(log_dir)

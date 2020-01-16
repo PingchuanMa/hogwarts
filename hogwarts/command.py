@@ -2,6 +2,7 @@ __all__ = []
 
 import os
 import sys
+import random
 import time
 import shutil
 import argparse
@@ -228,6 +229,7 @@ def run():
             elif choice == 'n':
                 sys.exit()
 
+    random.seed(42)
     if resume:
         wizard_file = find_wizard(opt.name, True)
         wizard = str(wizard_file.parent.relative_to(house_file.parent))
@@ -235,6 +237,7 @@ def run():
         trg_dir = wizard_file.parent / runway_info['trg_dir_from_wizard']
         processes = []
         for hrank in range(opt.hsize):
+            hrank = random.randint(0, 1000000)
             log_dir = wizard_dir / '{:d}'.format(hrank)
             log_dir.mkdir(parents=True, exist_ok=True)
             wizard = '{}/{:d}'.format(opt.name, hrank)
@@ -273,6 +276,7 @@ def run():
         shutil.copytree(str(src_dir), str(wizard_dir / src_dir.name))
         processes = []
         for hrank in range(opt.hsize):
+            hrank = random.randint(0, 1000000)
             log_dir = wizard_dir / '{:d}'.format(hrank)
             log_dir.mkdir(parents=True, exist_ok=True)
             wizard = '{}/{:d}'.format(opt.name, hrank)

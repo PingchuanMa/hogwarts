@@ -1,3 +1,4 @@
+from pathlib import Path
 import argparse
 import yaml
 import json5
@@ -67,6 +68,8 @@ class Config(dict):
     def __init__(self, *args, **kwargs):
         super(Config, self).__init__()
         for arg in args:
+            if isinstance(arg, Path):
+                arg = str(arg)
             if isinstance(arg, str):
                 if arg.endswith('.json') or arg.endswith('.json5'):
                     with open(arg) as f:
